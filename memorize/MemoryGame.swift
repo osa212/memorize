@@ -6,53 +6,65 @@
 //
 
 import Foundation
+import SwiftUI
 
 struct MemoryGame<CardContent> where CardContent: Equatable {
     private(set) var cards: Array<Card> //for read only
     
-    private var indexOfTheOneAndOnlyFaceUpCard: Int?
+    private var indexOfTheOneAndOnlyFaceUpCard: Int? {
+        get {
+            cards.indices.filter { cards[$0].isFaceUp }.oneAndOnly
+        } set {
+            cards.indices.forEach { cards[$0].isFaceUp = ($0 == newValue) }
+        }
+    }
     
     mutating func choose(_ card: Card) {
         if let chosenIndex = cards.firstIndex(where: { $0.id == card.id}),
-            !cards[chosenIndex].isFaceUp, //false
-           !cards[chosenIndex].isMatched // and false
+            !cards[chosenIndex].isFaceUp,
+           !cards[chosenIndex].isMatched
         {
             if let potentialMatchIndex = indexOfTheOneAndOnlyFaceUpCard {
                 if cards[chosenIndex].content == cards[potentialMatchIndex].content {
                     cards[chosenIndex].isMatched = true
                     cards[potentialMatchIndex].isMatched = true
                 }
-                indexOfTheOneAndOnlyFaceUpCard = nil
+                cards[chosenIndex].isFaceUp = true
 
             } else {
-                for index in cards.indices {
-                    cards[index].isFaceUp = false
-                }
                 indexOfTheOneAndOnlyFaceUpCard = chosenIndex
         }
         
-        cards[chosenIndex].isFaceUp.toggle()
     }
 }
     
     init(numberOfPairs: Int, createContent: (Int) -> CardContent) {
-        cards = Array<Card>()
+        cards = []
         
         for pair in 0..<numberOfPairs {
             let content: CardContent = createContent(pair)
-            cards.append(Card(id: pair*2, content: content))
-            cards.append(Card(id: pair*2+1, content: content))
+            cards.append(Card(content: content, id: pair*2))
+            cards.append(Card(content: content, id: pair*2+1))
         }
     }
     
     struct Card: Identifiable {
-        var id: Int
-        
-        var isFaceUp: Bool = false
-        var isMatched: Bool = false
-        var content: CardContent //CardContent - emoji
+        var isFaceUp = false
+        var isMatched = false
+        let content: CardContent //CardContent - emoji
+        let id: Int
     }
 
 }
 
+
+extension Array {
+    var oneAndOnly: Element? {
+        if self.count == 1 {
+            return self.first
+        } else {
+            return nil
+        }
+    }
+}
 
